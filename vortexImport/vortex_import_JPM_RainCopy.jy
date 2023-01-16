@@ -1,0 +1,45 @@
+from mil.army.usace.hec.vortex.io import BatchImporter
+from mil.army.usace.hec.vortex.geo import WktFactory
+import glob
+
+# C:\jy\HEC\HEC-HMS\4.9>HEC-HMS.cmd -script "C:\jy\vortexImport\vortex_import_JPM_Rain.jy"
+
+variables = ['PRCP']
+
+clip_shp = r"Z:\AdditionalSimCopy\AmiteBasinShape.shp"
+
+geo_options = {
+    'pathToShp': clip_shp,
+    'targetCellSize': '2000',
+    'targetWkt': WktFactory.shg(),
+    'resamplingMethod': 'Bilinear'
+}
+
+events = ['2004_MATTHEW', '2005_RITA', '2012_ISAAC']
+
+for event in events:
+
+    in_dir = "Z:\\AdditionalSimCopy\\"+ event
+    f = glob.glob(in_dir+"//*.nc") 
+
+    for afile in f:
+        
+        in_files = [afile]
+        stormId = afile.split("_")[4]
+        ensembleId = afile.split("_")[5].split(".")[0]
+        destination = afile.split(".")[0]+".dss"  
+        
+        write_options = {
+        'partA': stormId,
+        'partF': ensembleId
+        }
+
+        myImport = BatchImporter.builder() \
+            .inFiles(in_files) \
+            .variables(variables) \
+            .geoOptions(geo_options) \
+            .destination(destination) \
+            .writeOptions(write_options) \
+            .build()
+
+        myImport.process()
